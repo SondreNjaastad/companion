@@ -4,21 +4,21 @@ on: [push]
 jobs:
   linux64:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: '.node-version'
       - name: yarn update and lindist
         run: |
           yarn update
+          yarn build:rebuild_modules
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs .
+
+          yarn build:sentry
 
           yarn run lindist
 
@@ -30,8 +30,10 @@ jobs:
           VERSION=$(node -e "console.log(require('../package.json').version)")
           mv linux-unpacked companion-$VERSION
           tar -cvzf companion-$VERSION.tar.gz companion-$VERSION
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: rename and upload stuff
-        run: node ./tools/build_rename_git.js
+        run: yarn build:rename_upload
         env:
           CI_BUILD_OS: linux
           BITFOCUS_S3: ${{ secrets.BITFOCUS_S3 }}
@@ -40,38 +42,40 @@ jobs:
 
   osx:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: '.node-version'
       - name: yarn update and macdist
         run: |
           # try and avoid timeout errors
           yarn config set network-timeout 100000 -g
 
+          # these files upset electron-builder
+          rm .node-version .nvmrc
+
           yarn update
+          yarn build:rebuild_modules
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs .
+
+          yarn build:sentry
 
           yarn run macdist
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs "electron-output/mac/Companion.app/Contents/Resources/app.asar"
         env:
-          CI_BUILD_OS: osx
-          CI_BUILD_ARCH: x64
           CSC_LINK: ${{ secrets.OSX_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.OSX_CSC_KEY_PASSWORD }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: rename and upload stuff
-        run: node ./tools/build_rename_git.js
+        run: yarn build:rename_upload
         env:
           CI_BUILD_OS: osx
           CI_BUILD_ARCH: x64
@@ -81,38 +85,40 @@ jobs:
 
   osx-arm64:
     runs-on: macos-11
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: '.node-version'
       - name: yarn update and macarmdist
         run: |
           # try and avoid timeout errors
           yarn config set network-timeout 100000 -g
 
+          # these files upset electron-builder
+          rm .node-version .nvmrc
+
           yarn update
+          yarn build:rebuild_modules
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs .
+
+          yarn build:sentry
 
           yarn run macarmdist
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs "electron-output/mac-arm64/Companion.app/Contents/Resources/app.asar"
         env:
-          CI_BUILD_OS: osx
-          CI_BUILD_ARCH: arm64
           CSC_LINK: ${{ secrets.OSX_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.OSX_CSC_KEY_PASSWORD }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: rename and upload stuff
-        run: node ./tools/build_rename_git.js
+        run: yarn build:rename_upload
         env:
           CI_BUILD_OS: osx
           CI_BUILD_ARCH: arm64
@@ -122,35 +128,36 @@ jobs:
 
   win64:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: '.node-version'
       - name: yarn update and windist
+        shell: bash
         run: |
           # This fixes it somehow, and without it we get no logs from any shell scripts which are run
           yarn config set script-shell bash
 
           yarn update
+          yarn build:rebuild_modules
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs .
+
+          yarn build:sentry
 
           yarn run windist
 
           # verify that every module is runnable
           node tools/verify-module-build.mjs electron-output/win-unpacked/resources/app.asar
         env:
-          CI_BUILD_OS: win64
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       - name: rename and upload stuff
-        run: node ./tools/build_rename_git.js
+        run: yarn build:rename_upload
         env:
           CI_BUILD_OS: win64
           BITFOCUS_S3: ${{ secrets.BITFOCUS_S3 }}

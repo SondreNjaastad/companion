@@ -26,7 +26,7 @@ export const UserConfig = memo(function UserConfig() {
 		<CRow className="split-panels">
 			<CCol xl={6} className="primary-panel">
 				<h4>Settings</h4>
-				<p>Settings applies instantaneously, don't worry about it!</p>
+				<p>Settings apply instantaneously, don't worry about it!</p>
 
 				<UserConfigTable />
 			</CCol>
@@ -148,7 +148,7 @@ function UserConfigTable() {
 					</td>
 				</tr>
 				<tr>
-					<td>Enable emulator control for Logitec R400/Mastercue/dSan</td>
+					<td>Enable emulator control for Logitech R400/Mastercue/DSan</td>
 					<td>
 						<div className="form-check form-check-inline mr-1">
 							<CInputCheckbox
@@ -436,6 +436,59 @@ function UserConfigTable() {
 						</div>
 					</td>
 				</tr>
+
+				<tr>
+					<td colSpan="2" className="settings-category">
+						Admin UI Password
+					</td>
+				</tr>
+				<tr>
+					<td colSpan="2">
+						<CAlert color="danger">
+							This does not make an installation secure!
+							<br /> This is intended to keep normal users from stumbling upon the settings and changing things. It will
+							not keep out someone determined to bypass it.
+						</CAlert>
+					</td>
+				</tr>
+				<tr>
+					<td>Enable Locking</td>
+					<td>
+						<div className="form-check form-check-inline mr-1">
+							<CInputCheckbox
+								checked={config.admin_lockout}
+								onChange={(e) => setValue('admin_lockout', e.currentTarget.checked)}
+							/>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>Session Timeout (minutes, 0 for no timeout)</td>
+					<td>
+						<div className="form-check form-check-inline mr-1">
+							<CInput
+								type="number"
+								value={config.admin_timeout}
+								min={0}
+								step={1}
+								onChange={(e) => setValue('admin_timeout', e.currentTarget.value)}
+							/>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>Password</td>
+					<td>
+						<div className="form-check form-check-inline mr-1">
+							<CInput
+								type="text"
+								value={config.admin_password}
+								onChange={(e) => setValue('admin_password', e.currentTarget.value)}
+							/>
+						</div>
+					</td>
+				</tr>
+
 				<tr>
 					<td colSpan="2" className="settings-category">
 						HTTPS Web Server
@@ -764,7 +817,7 @@ function RemoteControlInfo() {
 							</p>
 
 							<p>
-								Press page 1 bank 2
+								Press page 1 button 2
 								<br />
 								<code>BANK-PRESS 1 2</code>
 							</p>
@@ -815,7 +868,7 @@ function RemoteControlInfo() {
 							</p>
 
 							<p>
-								Press page 1 bank 2
+								Press page 1 button 2
 								<br />
 								<code>/press/bank/1/2</code>
 							</p>
@@ -850,34 +903,34 @@ function RemoteControlInfo() {
 							</p>
 							<ul>
 								<li>
-									<code>/press/bank/</code>&lt;page&gt; &lt;bank&gt;
+									<code>/press/bank/</code>&lt;page&gt;<code>/</code>&lt;bank&gt;
 									<br />
 									<i>Press and release a button (run both down and up actions)</i>
 								</li>
 								<li>
-									<code>/press/bank/</code> &lt;page&gt; &lt;bank&gt; &lt;1&gt;
+									<code>/press/bank/</code>&lt;page&gt;<code>/</code>&lt;bank&gt; &lt;1&gt;
 									<br />
 									<i>Press the button (run down actions and hold)</i>
 								</li>
 								<li>
-									<code>/press/bank/</code> &lt;page&gt; &lt;bank&gt; &lt;0&gt;
+									<code>/press/bank/</code>&lt;page&gt;<code>/</code>&lt;bank&gt; &lt;0&gt;
 									<br />
 									<i>Release the button (run up actions)</i>
 								</li>
 								<li>
-									<code>/style/bgcolor/</code> &lt;page&gt; &lt;bank&gt; &lt;red 0-255&gt; &lt;green 0-255&gt; &lt;blue
-									0-255&gt;
+									<code>/style/bgcolor/</code>&lt;page&gt;<code>/</code>&lt;bank&gt; &lt;red 0-255&gt; &lt;green
+									0-255&gt; &lt;blue 0-255&gt;
 									<br />
 									<i>Change background color of button</i>
 								</li>
 								<li>
-									<code>/style/color/</code> &lt;page&gt; &lt;bank&gt; &lt;red 0-255&gt; &lt;green 0-255&gt; &lt;blue
-									0-255&gt;
+									<code>/style/color/</code>&lt;page&gt;<code>/</code>&lt;bank&gt; &lt;red 0-255&gt; &lt;green 0-255&gt;
+									&lt;blue 0-255&gt;
 									<br />
 									<i>Change color of text on button</i>
 								</li>
 								<li>
-									<code>/style/text/</code> &lt;page&gt; &lt;bank&gt; &lt;text&gt;
+									<code>/style/text/</code>&lt;page&gt;<code>/</code>&lt;bank&gt; &lt;text&gt;
 									<br />
 									<i>Change text on a button</i>
 								</li>

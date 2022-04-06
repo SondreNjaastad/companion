@@ -8,7 +8,7 @@ var system = require('./app.js')
 var fs = require('fs')
 var exec = require('child_process').exec
 const { init, showReportDialog, configureScope } = require('@sentry/electron')
-var network = require('network')
+const systeminformation = require('systeminformation')
 
 // Ensure there isn't another instance of companion running already
 var lock = app.requestSingleInstanceLock()
@@ -27,10 +27,20 @@ system.emit('skeleton-info-info', function (info) {
 	skeleton_info = info
 })
 
-if (process.env.DEVELOPER === undefined) {
+let sentryDsn
+try {
+	sentryDsn = fs
+		.readFileSync(__dirname + '/SENTRY')
+		.toString()
+		.trim()
+} catch (e) {
+	console.log('Sentry DSN not located')
+}
+
+if (process.env.DEVELOPER === undefined && sentryDsn && sentryDsn.substring(0, 8) == 'https://') {
 	console.log('Configuring sentry error reporting')
 	init({
-		dsn: 'https://535745b2e446442ab024d1c93a349154@sentry.bitfocus.io/8',
+		dsn: sentryDsn,
 		release: `companion@${skeleton_info.appBuild || skeleton_info.appVersion}`,
 		beforeSend(event) {
 			if (event.exception) {
@@ -115,14 +125,20 @@ function createWindow() {
 	})
 
 	ipcMain.on('network-interfaces:get', function () {
-		network.get_interfaces_list(function (err, list) {
-			const interfaces = [{ id: '127.0.0.1', label: 'localhost / 127.0.0.1' }]
+		systeminformation.networkInterfaces().then(function (list) {
+			const interfaces = [
+				{ id: '0.0.0.0', label: 'All Interfaces: 0.0.0.0' },
+				{ id: '127.0.0.1', label: 'localhost: 127.0.0.1' },
+			]
 
 			for (const obj of list) {
-				if (obj.ip_address !== null) {
+				if (obj.ip4 && !obj.internal) {
+					let label = `${obj.iface}: ${obj.ip4}`
+					if (obj.type && obj.type !== 'unknown') label += ` (${obj.type})`
+
 					interfaces.push({
-						id: obj.ip_address,
-						label: `${obj.name}: ${obj.ip_address} (${obj.type})`,
+						id: obj.ip4,
+						label: label,
 					})
 				}
 			}
@@ -220,13 +236,13 @@ function launchUI() {
 	var isMac = process.platform == 'darwin'
 	var isLinux = process.platform == 'linux'
 
-	if (skeleton_info.appURL.match(/http/)) {
+	if (skeleton_info.appLaunch.match(/http/)) {
 		if (isWin) {
-			exec('start ' + skeleton_info.appURL, function callback(error, stdout, stderr) {})
+			exec('start ' + skeleton_info.appLaunch, function callback(error, stdout, stderr) {})
 		} else if (isMac) {
-			exec('open ' + skeleton_info.appURL, function callback(error, stdout, stderr) {})
+			exec('open ' + skeleton_info.appLaunch, function callback(error, stdout, stderr) {})
 		} else if (isLinux) {
-			exec('xdg-open ' + skeleton_info.appURL, function callback(error, stdout, stderr) {})
+			exec('xdg-open ' + skeleton_info.appLaunch, function callback(error, stdout, stderr) {})
 		}
 	}
 }
